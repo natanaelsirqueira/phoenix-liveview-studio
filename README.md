@@ -1,5 +1,8 @@
 # LiveView Studio
 
+A series of code examples built during a Phoenix LiveView course on 
+[The Pragmatic Studio](https://pragmaticstudio.com/courses/phoenix-liveview).
+
 ## Installation
 
 1. Set up the project:
