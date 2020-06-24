@@ -1,17 +1,37 @@
 defmodule LiveViewStudioWeb.LicenseLive do
   use LiveViewStudioWeb, :live_view
 
-  alias LiveViewStudio.Licenses
   import Number.Currency
 
+  alias LiveViewStudio.Licenses
+
   def mount(_params, _session, socket) do
-    socket = assign(socket, seats: 3, amount: Licenses.calculate(3))
+    if connected?(socket) do
+      :timer.send_interval(1000, self(), :tick)
+    end
+
+    expiration_time = Timex.shift(Timex.now(), hours: 1)
+
+    socket =
+      assign(
+        socket,
+        seats: 3,
+        amount: Licenses.calculate(3),
+        expiration_time: expiration_time,
+        time_remaining: time_remaining(expiration_time)
+      )
+
     {:ok, socket}
   end
 
   def render(assigns) do
     ~L"""
     <h1>Team License</h1>
+
+    <div style="text-align: center; margin-bottom: 15px">
+      Time remaining: <%= @time_remaining %>
+    </div>
+
     <div id="license">
       <div class="card">
         <div class="content">
@@ -47,5 +67,18 @@ defmodule LiveViewStudioWeb.LicenseLive do
       )
 
     {:noreply, socket}
+  end
+
+  def handle_info(:tick, socket) do
+    socket = assign(socket, :time_remaining, time_remaining(socket.assigns.expiration_time))
+
+    {:noreply, socket}
+  end
+
+  defp time_remaining(expiration_time) do
+    Timex.Interval.new(from: Timex.now(), until: expiration_time)
+    |> Timex.Interval.duration(:seconds)
+    |> Timex.Duration.from_seconds()
+    |> Timex.format_duration(:humanized)
   end
 end
